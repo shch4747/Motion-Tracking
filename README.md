@@ -8,7 +8,7 @@ hectic.
 Python 3.10
 
 Start by installing Python 3.10 on your system if not already. Then setup a virtual environment to work in. In your project directory, type the command
- ``` py -3.10 -m venv <EnvironmentName>``` . Then activate the venv by running the command ```source myenv\Scripts\activate``` .
+ ``` py -3.10 -m venv <EnvironmentName>``` . Then activate the venv by running the command ```.\<EnvironmentName>\Scripts\activate``` -> "For windows only" .
 
  Now to install the required packages run the command ```pip install -r requirements.txt``` .
 
