@@ -1,31 +1,60 @@
-# Gesture Controlled Games
+# Markerless Body Motion Tracking — Webcam Game Controller
 
-This repo contains some games that I implemented to be playable with body gestures. Upon closely reading the code you may realise that the code in all three games lookes almost similar, that is because the original program is quite reusable. The setup process is also not very hectic.
-hectic.
+A real-time full-body pose estimation system that maps physical gestures to keyboard inputs, enabling control of games using body movements. No specialist hardware required — runs on a standard webcam at ~30 FPS.
 
+## How It Works
 
-## Requirements
-Python 3.10
+MediaPipe's pose estimation model detects 33 skeletal landmarks per frame. The system tracks the relative positions of key joints (wrists, shoulders, hips, ankles) across frames and maps specific pose transitions to keyboard events via `pynput`.
 
-Start by installing Python 3.10 on your system if not already. Then setup a virtual environment to work in. In your project directory, type the command
- ``` py -3.10 -m venv <EnvironmentName>``` . Then activate the venv by running the command ```.\<EnvironmentName>\Scripts\activate``` -> "For windows only" .
+### Detected gestures and mapped keys
 
- Now to install the required packages run the command ```pip install -r requirements.txt``` .
+| Gesture | Detection Logic | Key |
+|---|---|---|
+| Left hand raised | Left wrist y < left shoulder y | `A` |
+| Right hand raised | Right wrist y < right shoulder y | `D` |
+| Both hands raised | Both wrists above both shoulders | `Space` |
+| Duck | Hip y drops > 5% below calibrated baseline | `S` |
+| Jump | Ankle y decreases by > 1% frame-over-frame | `W` |
+| Reset | Wrists horizontally separated by > 5% of frame width | Recalibrates baseline |
 
- Now you're all setup to run the program. We tested the program on the online implementation of Subway Surfers available on Poki.com . Just run the ```subwaySurfers.py``` file and follow the following controls.
+Y-coordinates in normalized MediaPipe space decrease upward, so "above" means a smaller y value.
 
- ## Gestures
+### Calibration
 
-Stand in a way that you are visible to the camera waist up (knees up for good measure). Now,
+On the first frame, the system records the standing hip position as a baseline. Duck detection is relative to this baseline, making it robust to different camera heights and body sizes without manual configuration.
 
-- Make an "X" with your arms to calibrate the program with your body. Do this everytime the person playing the game changes, and also when any input glitches are experienced.
-- Horizontally moving either arm away from the body is a gesture to move in that direction in the game. So left arm means "A" key pressed and right arm means "D" key pressed.
-- To Jump just raise either or both your arms above your head.
-- To duck just duck slightly.
+## Setup
 
-The detection of the gesture depends on the relative coordinate positions of the various landmarks placed in a skeletal fashion over the body. There are certain thresholds(minimum distance needed) setup throughout the program that can be adjusted to finetune the accuracy of gesture detection.
+```bash
+pip install opencv-python mediapipe pynput
+```
 
-- side_threshold -> How much horizontal distance your wrist needs to have from your shoulder to consider it as input in that direction(left or right).
-- duck_threshold -> How much below your normal waist level you need to go to count it as ducking.
-- side_overflow_threshold -> How much your wrists need to be below your shoulder to account for side movement in the first place.
-- jump_threshold -> How much you need to raise your hands above your head to account as jump.
+```bash
+python main.py
+```
+
+Stand in frame, wait for the first frame to calibrate, then use gestures to control the game. Press `q` to quit.
+
+## Tunable Parameters
+
+At the top of `main.py`:
+
+```python
+min_detection_confidence = 0.5   # MediaPipe landmark detection threshold
+min_tracking_confidence  = 0.5   # MediaPipe tracking threshold across frames
+duck_threshold           = 0.05  # Hip drop fraction to trigger duck
+jump_threshold           = 0.01  # Ankle rise fraction per frame to trigger jump
+```
+
+Increase thresholds to reduce false positives; decrease for more sensitive detection. Values may need adjustment based on camera distance and lighting.
+
+## Tested With
+
+- Subway Surfers (browser)
+- Chrome Dino game
+
+The gesture-to-key mapping is game-agnostic — any game controllable via W/A/S/D/Space works without modification.
+
+## Tech
+
+Python, MediaPipe, OpenCV, pynput
